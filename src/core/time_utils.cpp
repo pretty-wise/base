@@ -2,7 +2,7 @@
  * Copywrite 2014-2015 Krzysztof Stasik. All rights reserved.
  */
 #include "base/core/time_utils.h"
-#include "base/core/macro.h"
+#include "base/core/assert.h"
 
 #if defined __linux__
 #include <time.h>

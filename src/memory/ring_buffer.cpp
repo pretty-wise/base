@@ -3,7 +3,7 @@
  */
 #include "base/memory/ring_buffer.h"
 #include "base/core/assert.h"
-#include <string> // memcpy
+#include "base/memory/memory.h"
 
 namespace Base {
 

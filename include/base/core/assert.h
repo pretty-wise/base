@@ -27,8 +27,8 @@
     __ASSERT                                                                   \
   }
 #else // _BASE_USE_ASSERT
-#define _BASE_ASSERT_0(exp, ...) (void *)(exp)
-#define _BASE_ASSERT_1(exp) (void *)(exp)
+#define _BASE_ASSERT_0(exp, ...) (void)(exp)
+#define _BASE_ASSERT_1(exp) (void)(exp)
 #endif // _BASE_USE_ASSERT
 
 #define _ASSERT_RESOLVE(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...) _9

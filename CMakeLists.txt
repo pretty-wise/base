@@ -3,7 +3,7 @@ project (base)
 set (base_VERSION_MAJOR 0)
 set (base_VERSION_MINOR 1)
 
-include (../settings.cmake)
+include (settings.cmake)
 
 set(TARGET_EXPORT_NAME "base-targets")
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries.")

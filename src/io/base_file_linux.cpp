@@ -19,7 +19,7 @@ int EngineToLinux(int mode) {
   } mapping[] = {{OM_Append, O_APPEND}, {OM_Read, O_RDONLY},
                  {OM_Write, O_WRONLY},  {OM_ReadWrite, O_RDWR},
                  {OM_Trunc, O_TRUNC},   {OM_Create, O_CREAT}};
-  for(int i = 0; i < sizeof(mapping) / sizeof(mapping[0]); ++i) {
+  for(u32 i = 0; i < sizeof(mapping) / sizeof(mapping[0]); ++i) {
     if((mode & mapping[i].engine) != 0) {
       result |= mapping[i].linux;
     }
