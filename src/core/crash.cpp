@@ -194,4 +194,6 @@ bool RegisterCrashHandler() {
   return ret == 0;
 }
 
+void Crash() { raise(SIGSEGV); }
+
 } // namespace Base
