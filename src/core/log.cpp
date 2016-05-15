@@ -57,6 +57,11 @@ const char *SkipParentDirs(const char *path) {
   return result;
 }
 
+const char *GetFilename(const char *path) {
+  const char *filename = strrchr(path, '/');
+  return filename ? filename + 1 : path;
+}
+
 void Write(const char *file, int line, int level, const LogChannel &channel,
            const char *format, va_list arg_list) {
   const int max_line_length = Base::Log::kLogLineMaxLength;
@@ -89,8 +94,9 @@ void Write(const char *file, int line, int level, const LogChannel &channel,
   }
 
   // write the log suffix
-  n = snprintf(&logline[offset], avail, " file=%s line=%d",
-               SkipParentDirs(file), line);
+  file = GetFilename(file);
+  n = snprintf(&logline[offset], avail, " file=%s line=%d", file, line);
+
   if(n >= 0 && n < avail) {
     offset += n;
     avail -= n;
