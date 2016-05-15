@@ -2,8 +2,8 @@
  * Copywrite 2014-2015 Krzysztof Stasik. All rights reserved.
  */
 #include "base/threading/thread.h"
-#include <unistd.h>
 #include "base/core/assert.h"
+#include <unistd.h>
 
 namespace Base {
 

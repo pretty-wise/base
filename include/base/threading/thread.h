@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <pthread.h>
+#include <sys/types.h>
 
 #include "base/core/types.h"
 

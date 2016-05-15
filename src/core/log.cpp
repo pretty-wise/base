@@ -57,8 +57,8 @@ const char *SkipParentDirs(const char *path) {
   return result;
 }
 
-void WriteImpl(const char *file, int line, int level, const LogChannel &channel,
-               const char *format, va_list arg_list) {
+void Write(const char *file, int line, int level, const LogChannel &channel,
+           const char *format, va_list arg_list) {
   const int max_line_length = Base::Log::kLogLineMaxLength;
   char logline[max_line_length];
   // NOTE: remove three bytes to ensure that there is space for the CRLF
@@ -68,8 +68,8 @@ void WriteImpl(const char *file, int line, int level, const LogChannel &channel,
   int n = 0;
 
   const char *level_string = GetLevelString(level);
-  n = snprintf(&logline[offset], avail, "%d|%s|%s|msg=",
-               Base::Time::GetTimeMs(), level_string, channel.GetName());
+  n = snprintf(&logline[offset], avail, "%d|%s|%s|", Base::Time::GetTimeMs(),
+               level_string, channel.GetName());
   offset += n;
   avail -= n;
 
@@ -123,7 +123,7 @@ void Write(const char *file, int line, int level, const LogChannel &channel,
            const char *format, ...) {
   va_list args;
   va_start(args, format);
-  WriteImpl(file, line, level, channel, format, args);
+  Write(file, line, level, channel, format, args);
   va_end(args);
 }
 

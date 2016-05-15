@@ -6,6 +6,8 @@
 #include "base/core/log_channel.h"
 #include "base/core/types.h"
 
+#include <cstdarg>
+
 #define BASE_DEBUG(channel, ...)                                               \
   Base::Log::Write(__FILE__, __LINE__, Base::Log::kLogDebug, channel,          \
                    __VA_ARGS__)
@@ -39,6 +41,9 @@ const LogChannel kDefaultCategory("default");
 
 void Write(const char *file, int line, int level, const LogChannel &category,
            const char *format, ...);
+
+void Write(const char *file, int line, int level, const LogChannel &channel,
+           const char *format, va_list arg_list);
 
 typedef void (*LogHook)(int level, const char *log_line, int length,
                         void *context);

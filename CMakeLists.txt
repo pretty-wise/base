@@ -33,10 +33,12 @@ set (CORE_FILES
   include/base/core/time_utils.h
   include/base/core/types.h
   include/base/core/str.h
+  include/base/core/crash.h
  	src/core/time_utils.cpp
   src/core/string_id.cpp
   src/core/shared_object.cpp
   src/core/str.cpp
+  src/core/crash.cpp
 	include/base/core/log.h
 	src/core/log.cpp
 )
