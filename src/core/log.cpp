@@ -13,8 +13,10 @@ namespace Base {
 namespace Log {
 
 static const LogChannel kAny("");
+static int gHandleGenerator = 0;
 
 struct HookData {
+  int handle;
   LogChannel channel;
   int filter;
   LogHook callback;
@@ -22,7 +24,7 @@ struct HookData {
 };
 
 // todo(kstasik): better init/release
-static std::vector<HookData> g_hooks;
+static std::vector<HookData> gLogHooks;
 
 static int gLogLevelMask =
     kLogDebug | kLogInfo | kLogWarning | kLogError | kLogCritical;
@@ -109,11 +111,11 @@ void Write(const char *file, int line, int level, const LogChannel &channel,
   logline[offset++] = '\n';
   logline[offset] = 0;
 
-  if(g_hooks.empty()) {
+  if(gLogHooks.empty()) {
     ConsoleOutput(level, logline, offset, nullptr);
   }
 
-  for(auto it : g_hooks) {
+  for(auto it : gLogHooks) {
     if((it.channel == kAny || it.channel == channel) &&
        (it.filter & level) != 0) {
       it.callback(level, logline, offset, it.context);
@@ -133,14 +135,24 @@ void Write(const char *file, int line, int level, const LogChannel &channel,
   va_end(args);
 }
 
-void Register(int filter, LogHook callback, void *context) {
-  Register(kAny, filter, callback, context);
+int Register(int filter, LogHook callback, void *context) {
+  return Register(kAny, filter, callback, context);
 }
 
-void Register(const LogChannel &channel, int filter, LogHook callback,
-              void *context) {
-  HookData data = {channel, filter, callback, context};
-  g_hooks.push_back(data);
+int Register(const LogChannel &channel, int filter, LogHook callback,
+             void *context) {
+  int handle = ++gHandleGenerator;
+  HookData data = {handle, channel, filter, callback, context};
+  gLogHooks.push_back(data);
+  return handle;
+}
+
+void Unregister(int handle) {
+  gLogHooks.erase(std::remove_if(begin(gLogHooks), end(gLogHooks),
+                                 [handle](const HookData &data) {
+                                   return handle == data.handle;
+                                 }),
+                  end(gLogHooks));
 }
 
 } // namespace Log

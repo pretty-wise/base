@@ -50,9 +50,10 @@ typedef void (*LogHook)(int level, const char *log_line, int length,
 
 void ConsoleOutput(int level, const char *log_line, int length, void *context);
 
-void Register(int filter, LogHook callback, void *context);
-void Register(const LogChannel &channel, int filter, LogHook callback,
-              void *context);
+int Register(int filter, LogHook callback, void *context);
+int Register(const LogChannel &channel, int filter, LogHook callback,
+             void *context);
+void Unregister(int handle);
 
 } // namespace Log
 } // namespace Base

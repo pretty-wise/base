@@ -41,6 +41,8 @@ set (CORE_FILES
   src/core/crash.cpp
 	include/base/core/log.h
 	src/core/log.cpp
+	include/base/core/log_file.h
+	src/core/log_file.cpp
 )
 
 set (MATH_FILES 
