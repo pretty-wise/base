@@ -1,3 +1,6 @@
+/*
+ * Copywrite 2014-2015 Krzysztof Stasik. All rights reserved.
+ */
 #include "base/core/log_file.h"
 #include "base/io/base_file.h"
 

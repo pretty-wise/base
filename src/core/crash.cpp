@@ -1,3 +1,6 @@
+/*
+ * Copywrite 2014-2015 Krzysztof Stasik. All rights reserved.
+ */
 #include "base/core/crash.h"
 #include "base/memory/memory.h"
 #include "base/process/process.h"
