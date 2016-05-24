@@ -35,9 +35,11 @@ enum LogLevel {
   kLogWarning = (0x1 << 2),  /*!< Warning category */
   kLogError = (0x1 << 3),    /*!< Recoverable error category */
   kLogCritical = (0x1 << 4), /*!< Non-recoverable error category */
+  kLogAll = kLogDebug | kLogInfo | kLogWarning | kLogError | kLogCritical
 };
 
 const LogChannel kDefaultCategory("default");
+const LogChannel kAnyCategory("");
 
 void Write(const char *file, int line, int level, const LogChannel &category,
            const char *format, ...);

@@ -3,6 +3,7 @@
  */
 #include "base/core/log_file.h"
 #include "base/io/base_file.h"
+#include "base/process/process.h"
 
 #include <vector>
 
@@ -30,13 +31,32 @@ void FileLogHook(int level, const char *log_line, int length, void *context) {
 }
 
 LogFile CreateLogFile(const char *path) {
-  Base::FileHandle file = Base::Open(path, OM_Append | OM_Create);
+  Base::FileHandle file = Base::Create(path);
   if(file == kInvalidHandle) {
     return nullptr;
   }
   LogFileData *data = new LogFileData();
   data->file = file;
   return data;
+}
+
+LogFile CreateLogFileUnique(const char *directory, const char *basename) {
+  pid_t pid = Base::Process::getpid();
+
+  const int kMaxPath = 512;
+  char fullpath[kMaxPath];
+  int avail = 512 - 1;
+  int offset = 0;
+  int n = 0;
+  if(directory && strlen(directory) > 0) {
+    n = snprintf(&fullpath[offset], avail, "%s/", directory);
+    offset += n;
+    avail -= n;
+  }
+  n = snprintf(&fullpath[offset], avail, "%s_%d.log", basename, pid);
+  offset += n;
+  avail -= n;
+  return CreateLogFile(fullpath);
 }
 
 void DestroyLogFile(LogFile sink) {

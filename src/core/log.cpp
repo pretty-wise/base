@@ -12,7 +12,6 @@
 namespace Base {
 namespace Log {
 
-static const LogChannel kAny("");
 static int gHandleGenerator = 0;
 
 struct HookData {
@@ -116,7 +115,7 @@ void Write(const char *file, int line, int level, const LogChannel &channel,
   }
 
   for(auto it : gLogHooks) {
-    if((it.channel == kAny || it.channel == channel) &&
+    if((it.channel == kAnyCategory || it.channel == channel) &&
        (it.filter & level) != 0) {
       it.callback(level, logline, offset, it.context);
     }
@@ -136,7 +135,7 @@ void Write(const char *file, int line, int level, const LogChannel &channel,
 }
 
 int Register(int filter, LogHook callback, void *context) {
-  return Register(kAny, filter, callback, context);
+  return Register(kAnyCategory, filter, callback, context);
 }
 
 int Register(const LogChannel &channel, int filter, LogHook callback,

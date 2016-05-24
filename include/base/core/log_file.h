@@ -15,6 +15,11 @@ typedef struct LogFileData *LogFile;
 // @return A context of a log sink.
 LogFile CreateLogFile(const char *path);
 
+// Creates a log file in directory with a name in format:
+// basename_{pid}.log
+// @return A context of a log sink.
+LogFile CreateLogFileUnique(const char *directory, const char *basename);
+
 // Close log file sink.
 // @pram sink A context to destroy.
 void DestroyLogFile(LogFile sink);

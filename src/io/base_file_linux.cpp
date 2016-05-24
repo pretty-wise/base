@@ -27,6 +27,10 @@ int EngineToLinux(int mode) {
   return result;
 }
 
+FileHandle Create(const char *path) {
+  return Open(path, OM_Write | OM_Create | OM_Trunc);
+}
+
 FileHandle Open(const char *path, int mode) {
   mode_t permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
   int handle = open(path, EngineToLinux(mode), permissions);

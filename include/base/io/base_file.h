@@ -20,10 +20,38 @@ typedef int FileHandle;
 
 static const FileHandle kInvalidHandle = -1;
 
+// Create a file for writing. If the file exists
+// its content is overwritten.
+// @param path Path of file to create
+// @return kInvalidHandle if operation failed.
+FileHandle Create(const char *path);
+
+// Create a file.
+// @param path Path of file to open.
+// @param mode OpenMode flags
+// @return kInvalidHandle if operation failed.
 FileHandle Open(const char *path, int mode);
+
+// Close a file
+// @param file Handle to close
 void Close(FileHandle file);
+
+// Read from handle.
+// @param file Handle to read from.
+// @param buffer Buffer to write to.
+// @param nbytes Size of buffer in bytes.
+// @return Number of bytes written.
 size_t Read(FileHandle file, void *buffer, size_t nbytes);
+
+// Write to file.
+// @param buffer Buffer to write.
+// @param nbytes Size of buffer in bytes
+// @return Number of bytes written.
 size_t Write(FileHandle file, const void *buffer, size_t nbytes);
+
+// Get filesize.
+// @param file Handle to get the size of.
+// @return Size in bytes.
 size_t Size(FileHandle file);
 
 } // namespace Base
