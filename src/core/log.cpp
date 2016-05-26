@@ -5,9 +5,11 @@
 #include "base/core/time_utils.h"
 
 #include <stdio.h>
-#include <thread>
+#include <string.h>
 #include <stdarg.h>
+#include <thread>
 #include <vector>
+#include <algorithm>
 
 namespace Base {
 namespace Log {
