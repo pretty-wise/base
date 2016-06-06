@@ -43,6 +43,8 @@ Url::Url(const char *string, u16 port) {
 Url::Url(const char *hostname, const char *service) {
   strncpy(m_hostname, hostname, kHostnameMax);
   m_hostname[kHostnameMax - 1] = '\0';
+  strncpy(m_service, service, kServiceMax);
+  m_hostname[kServiceMax - 1] = '\0';
 }
 
 Url::Url(const Socket::Address &addr) {
