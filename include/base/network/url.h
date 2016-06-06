@@ -6,29 +6,47 @@
 #include "base/network/address.h"
 #include "base/core/types.h"
 
-#define PRINTF_URL(url) url.GetAddress().GetA(), url.GetAddress().GetB(), url.GetAddress().GetC(), url.GetAddress().GetD(), url.GetPort()
- 
+#include <stdio.h>
+#include <cstring>
+#include <string.h>
+
+#define PRINTF_URL(url) url.GetHostname(), url.GetService()
+
 namespace Base {
 
-class Url
-{
+namespace Socket {
+class Address;
+}
+
+class Url {
 public:
-		Url() : m_address((u32)0), m_port(0) {}
-		Url( const AddressIPv4& address, u16 port ) : m_address(address), m_port(port) {}
-		Url( const char* string );
-		Url( const char* address, u16 port );
+  static const u32 kHostnameMax = 128;
+  static const u32 kServiceMax = 64;
 
-		AddressIPv4 GetAddress() const { return m_address; }
-		u16 GetPort() const { return m_port; }
-		void SetAddress(const AddressIPv4& address) { m_address = address; }
-		void SetPort(u16 port) { m_port = port; }
+  Url();
+  Url(const AddressIPv4 &address, u16 port);
+  Url(const char *string);
+  Url(const char *address, u16 port);
+  Url(const char *hostname, const char *service);
+  Url(const Socket::Address &addr);
 
-		inline bool operator==( const Url& rhs ) const { return m_address == rhs.m_address && m_port == rhs.m_port; }
-		inline bool operator!=( const Url& rhs ) const { return m_address != rhs.m_address || m_port != rhs.m_port; }
+  const char *GetHostname() const { return m_hostname; }
+  const char *GetService() const { return m_service; }
+
+  u16 GetPort() const;
+
+  inline bool operator==(const Url &rhs) const {
+    return strncmp(m_hostname, rhs.m_hostname, kHostnameMax) &&
+           strncmp(m_service, rhs.m_service, kServiceMax);
+  }
+  inline bool operator!=(const Url &rhs) const {
+    return strncmp(m_hostname, rhs.m_hostname, kHostnameMax) ||
+           strncmp(m_service, rhs.m_service, kServiceMax);
+  }
 
 private:
-		AddressIPv4 m_address;
-		u16 m_port;
+  char m_hostname[kHostnameMax];
+  char m_service[kServiceMax];
 };
 
 } // namespace Base

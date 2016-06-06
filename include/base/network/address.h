@@ -4,8 +4,41 @@
 #pragma once
 
 #include "base/core/types.h"
+#include <netdb.h>
 
 namespace Base {
+
+class Url;
+
+namespace Socket {
+
+class Address {
+public:
+  static bool CreateUDP(const char *hostname, u16 port, Address *result);
+  static bool CreateUDP(const Base::Url &url, Address *result);
+  static bool CreateUDP(const char *hostname, const char *service,
+                        Address *result);
+
+  static bool CreateTCP(const Base::Url &url, Address *result);
+  static bool CreateTCP(const char *hostnam, const char *service,
+                        Address *result);
+
+  bool operator==(const Address &rhs) const;
+  bool operator!=(const Address &rhs) const;
+
+  bool GetHostname(char *buffer, u32 nbytes) const;
+  bool GetService(char *buffer, u32 nbytes) const;
+
+public:
+  struct sockaddr_storage m_data;
+  u32 m_length;
+};
+
+const char *Print(const Address &addr);
+
+} // namespace Socket
+
+///////////////////////////////////////////////////////////////////////////////
 
 s32 NetToHostL(s32 value);
 s16 NetToHostS(s16 value);

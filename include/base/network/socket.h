@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <errno.h>
 
+#define PRINTF_ADDR(addr)
+
 namespace Base {
 
 namespace Socket {
@@ -26,16 +28,17 @@ bool GetNetworkInterface(Base::AddressIPv4 *address,
 bool GetBoundAddress(Handle socket, Base::Url *url);
 
 namespace Tcp {
+
 static const int kFailed = 0;
 static const int kConnecting = 1;
 static const int kConnected = 2;
 
 Handle Open();
 bool Listen(Handle socket, u16 *port);
-int Connect(Handle socket, const Base::Url &url);
+int Connect(Handle socket, const Address &addr);
 int IsConnected(Handle socket);
 
-bool Accept(Handle socket, Handle *incoming, Base::Url *connectee);
+bool Accept(Handle socket, Handle *incoming, Address *connectee);
 streamsize Send(Handle socket, const void *data, streamsize nbytes, int *error);
 streamsize Recv(Handle socket, void *buffer, streamsize nbytes, int *error);
 
@@ -44,12 +47,14 @@ streamsize Recv(Handle socket, void *buffer, streamsize nbytes, int *error);
 namespace Udp {
 
 Handle Open(u32 addr, u16 *port);
-inline Handle Open(u16 *port) { return Open(0, port); }
-bool Send(Handle socket, const Base::Url &url, const void *buffer,
+Handle Open(const Url &url, u16 *port);
+inline Handle Open(u16 *port) { return Open((u32)0, port); }
+bool Send(Handle socket, const Address &addr, const void *buffer,
           streamsize nbytes, int *error);
-streamsize Recv(Handle socket, Base::Url *url, void *buffer, streamsize nbytes,
+streamsize Recv(Handle socket, Address *addr, void *buffer, streamsize nbytes,
                 int *error);
 
 } // namespace Udp
+
 } // namespace Socket
 } // namespace Base
