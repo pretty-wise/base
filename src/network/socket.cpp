@@ -79,8 +79,9 @@ bool GetBoundAddress(Handle socket, Base::Url *url) {
     return false;
   }
 
-  url->SetAddress(Base::AddressIPv4((u32)ntohl(address.sin_addr.s_addr)));
-  url->SetPort(ntohs(address.sin_port));
+  // todo(kstasik):
+  // url->SetAddress(Base::AddressIPv4((u32)ntohl(address.sin_addr.s_addr)));
+  // url->SetPort(ntohs(address.sin_port));
   return true;
 }
 
@@ -168,14 +169,8 @@ bool Listen(Handle socket, u16 *port) {
   return true;
 }
 
-int Connect(Handle socket, const Base::Url &url) {
-  struct sockaddr_in address;
-  memset(&address, 0, sizeof(sockaddr));
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = htonl(url.GetAddress().GetRaw());
-  address.sin_port = htons(url.GetPort());
-
-  int result = connect(socket, (struct sockaddr *)&address, sizeof(address));
+int Connect(Handle socket, const Address &url) {
+  int result = connect(socket, (struct sockaddr *)&url.m_data, url.m_length);
   BASE_ASSERT(result == 0 || (result == -1 && errno == EINPROGRESS),
               "socket connect failed %d. errno: %d.", result, errno);
   if(result == 0) {
@@ -219,12 +214,11 @@ int IsConnected(Handle socket) {
   return kFailed;
 }
 
-bool Accept(Handle socket, Handle *incoming, Base::Url *connectee) {
-  struct sockaddr_in address;
-  socklen_t address_len = sizeof(address);
-  memset(&address, 0, sizeof(sockaddr));
+bool Accept(Handle socket, Handle *incoming, Address *connectee) {
+  socklen_t address_len = sizeof(struct sockaddr_in);
 
-  int result = accept(socket, (struct sockaddr *)&address, &address_len);
+  int result =
+      accept(socket, (struct sockaddr *)&connectee->m_data, &address_len);
   if(-1 != result) {
 
     if(-1 == fcntl(result, F_SETFL, O_NONBLOCK)) {
@@ -239,10 +233,6 @@ bool Accept(Handle socket, Handle *incoming, Base::Url *connectee) {
     }
 
     *incoming = result;
-
-    connectee->SetAddress(
-        Base::AddressIPv4((u32)ntohl(address.sin_addr.s_addr)));
-    connectee->SetPort(ntohs(address.sin_port));
   }
 
   return result != -1;
@@ -271,6 +261,67 @@ streamsize Recv(Handle socket, void *buffer, streamsize nbytes, int *error) {
 } // namespace Tcp
 
 namespace Udp {
+
+Handle Open(const Base::Url &url, u16 *port) {
+  const char *hostname = url.GetHostname();
+  const char *service = url.GetService();
+
+  struct addrinfo hints;
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_DGRAM;
+  hints.ai_flags = 0;
+  hints.ai_protocol = IPPROTO_UDP;
+
+  struct addrinfo *result;
+  int err = getaddrinfo(hostname, service, &hints, &result);
+  if(err) {
+    return InvalidHandle;
+  }
+  Handle handle = InvalidHandle;
+  for(struct addrinfo *p = result; p != NULL; p = p->ai_next) {
+    handle = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+    if(handle == InvalidHandle) {
+      BASE_LOG_LINE("socket failed with %d", errno);
+      continue;
+    }
+    int res = bind(handle, p->ai_addr, p->ai_addrlen);
+    if(-1 == res) {
+      BASE_LOG_LINE("bind failed with %d", errno);
+      /*char host[128];
+      char serv[128];
+      if(0 == getnameinfo(p->ai_addr, p->ai_addrlen, host, 128, serv, 128, 0))
+      {
+        BASE_LOG_LINE("bind failed for %s:%s", host, serv);
+      }*/
+      Close(handle);
+      continue;
+    }
+    //
+    // non-blocking socket.
+    if(-1 == fcntl(handle, F_SETFL, O_NONBLOCK)) {
+      BASE_LOG_LINE("fcntl failed with %d", errno);
+      Close(handle);
+      continue;
+    }
+
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
+    res = getsockname(handle, (struct sockaddr *)&addr, &addr_len);
+
+    if(res == -1) {
+      BASE_LOG_LINE("getsockname failed with %d", errno);
+      Close(handle);
+      continue;
+    }
+
+    *port = ntohs(addr.sin_port);
+    break;
+  }
+
+  freeaddrinfo(result);
+  return handle;
+}
 
 Handle Open(u32 address, u16 *port) {
   struct sockaddr_in my_addr;
@@ -312,14 +363,10 @@ Handle Open(u32 address, u16 *port) {
   return handle;
 }
 
-bool Send(Handle socket, const Base::Url &dest, const void *buffer,
+bool Send(Handle socket, const Address &dest, const void *buffer,
           streamsize nbytes, int *error) {
-  sockaddr_in address;
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = htonl(dest.GetAddress().GetRaw());
-  address.sin_port = htons(dest.GetPort());
-  streamsize sent = sendto(socket, buffer, nbytes, 0, (sockaddr *)&address,
-                           sizeof(sockaddr_in));
+  streamsize sent = sendto(socket, buffer, nbytes, 0, (sockaddr *)&dest.m_data,
+                           dest.m_length);
   if(sent == -1) {
     *error = errno;
     return false;
@@ -327,12 +374,10 @@ bool Send(Handle socket, const Base::Url &dest, const void *buffer,
   return true;
 }
 
-streamsize Recv(Handle socket, Base::Url *from, void *buffer, streamsize nbytes,
+streamsize Recv(Handle socket, Address *from, void *buffer, streamsize nbytes,
                 int *error) {
-  sockaddr_in from_;
-  socklen_t fromsize = sizeof(from_);
   streamsize received = recvfrom(socket, (char *)buffer, nbytes, 0,
-                                 (sockaddr *)&from_, &fromsize);
+                                 (sockaddr *)&from->m_data, &from->m_length);
   if(received == -1) {
     if(errno == EWOULDBLOCK) {
       return 0;
@@ -340,9 +385,6 @@ streamsize Recv(Handle socket, Base::Url *from, void *buffer, streamsize nbytes,
     BASE_LOG_LINE("socket read on %d failed with %d", socket, errno);
     *error = errno;
   }
-  u32 address = ntohl(from_.sin_addr.s_addr);
-  u16 port = ntohs(from_.sin_port);
-  *from = Base::Url(Base::AddressIPv4(address), port);
   return received;
 }
 
