@@ -1,25 +1,15 @@
-cmake_minimum_required (VERSION 2.6)
-project (base)
-set (base_VERSION_MAJOR 0)
-set (base_VERSION_MINOR 1)
+cmake_minimum_required (VERSION 3.0)
+project (Base)
+set (Base_VERSION_MAJOR 0)
+set (Base_VERSION_MINOR 1)
+set (Base_VERSION 0.1)
 
 include (settings.cmake)
 
-set(TARGET_EXPORT_NAME "base-targets")
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries.")
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for binaries.")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for includes.")
 set(INSTALL_CMAKE_DIR cmake CACHE PATH "Installation directory for cmake files.")
-
-# Make relative paths absolute (needed later on)
-foreach(p LIB BIN INCLUDE CMAKE)
-	set(var INSTALL_${p}_DIR)
-	if(NOT IS_ABSOLUTE "${${var}}")
-		set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-	endif()
-endforeach()
-
-include_directories (${CMAKE_SOURCE_DIR}/include)
 
 set (CORE_FILES 
 	include/base/core/types.h
@@ -127,7 +117,7 @@ set (PROCESS_FILES
 	src/process/process.cpp
 )
 
-add_library (base
+add_library (Base STATIC
   ${CORE_FILES}
   ${MATH_FILES}
   ${NETWORK_FILES}
@@ -138,35 +128,37 @@ add_library (base
 	${PROCESS_FILES}
 )
 
-install(TARGETS base
-	DESTINATION ${INSTALL_LIB_DIR}
-	EXPORT ${TARGET_EXPORT_NAME}
+target_include_directories (Base PUBLIC 
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+	$<INSTALL_INTERFACE:include>
+)
+target_include_directories (Base PRIVATE src)
+
+install (TARGETS Base EXPORT base_targets
+	LIBRARY DESTINATION ${INSTALL_LIB_DIR}
+	ARCHIVE DESTINATION ${INSTALL_LIB_DIR}
+	RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+	INCLUDES DESTINATION ${INSTALL_INCLUDE_DIR}
 )
 
-export (TARGETS base 
-	FILE "${CMAKE_BINARY_DIR}/${TARGET_EXPORT_NAME}.cmake"
-)
-export (PACKAGE base)
-
-file(RELATIVE_PATH RELATIVE_INCLUDE_DIR "${INSTALL_CMAKE_DIR}"
-	   "${INSTALL_INCLUDE_DIR}"
-)
-set(CONF_INCLUDE_DIRS "\${BASE_CMAKE_DIR}/${RELATIVE_INCLUDE_DIR}")
-
-configure_file(${CMAKE_SOURCE_DIR}/cmake/config.cmake.in
-	${CMAKE_BINARY_DIR}/base-config.cmake @ONLY
-)
-
-install(DIRECTORY include/
+install(
+	DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/base"
 	DESTINATION ${INSTALL_INCLUDE_DIR}
+  FILES_MATCHING PATTERN "*.*h"
 )
 
-install(FILES 
-	"${CMAKE_BINARY_DIR}/base-config.cmake"
-	DESTINATION ${INSTALL_CMAKE_DIR}
-	COMPONENT dev
+install (EXPORT base_targets
+	FILE BaseTargets.cmake
+	NAMESPACE Base::
+	DESTINATION cmake
 )
 
-install(EXPORT ${TARGET_EXPORT_NAME}
-	DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file("../BaseConfigVersion.cmake"
+	VERSION ${Base_VERSION}
+	COMPATIBILITY SameMajorVersion
+)
+
+install (FILES "BaseConfig.cmake" "BaseConfigVersion.cmake"
+	DESTINATION cmake
 )
