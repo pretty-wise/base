@@ -36,8 +36,6 @@ struct crash_message {
 
 static const int kCrashReadTimeout = 10;
 static const int kCrashMaxMessageSize = 4096;
-static const int kCrashAncillaryDataSize =
-    kCrashMaxMessageSize - sizeof(crash_message);
 
 static int g_FaultWriteEnd = -1;
 
