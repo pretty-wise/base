@@ -37,9 +37,7 @@ set (CORE_FILES
 
 set (MATH_FILES 
 	include/base/math/crc.h
-  include/base/math/crc.inl
   include/base/math/math.h
-  include/base/math/math.inl
   include/base/math/matrix4x4.h
   include/base/math/quaternion.h
   include/base/math/ray.h
