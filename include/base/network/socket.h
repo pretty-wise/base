@@ -6,8 +6,8 @@
 #include "base/core/types.h"
 #include "base/network/url.h"
 
-#include <sys/socket.h>
 #include <errno.h>
+#include <sys/socket.h>
 
 #define PRINTF_ADDR(addr)
 
@@ -34,11 +34,16 @@ static const int kConnecting = 1;
 static const int kConnected = 2;
 
 Handle Open();
+Handle Open(int *error);
 bool Listen(Handle socket, u16 *port);
+bool Listen(Handle socket, u16 *port, int *error);
 int Connect(Handle socket, const Address &addr);
 int IsConnected(Handle socket);
 
+bool Accept(Handle socket, Handle *incoming, Address *connectee, u32 timeout_ms,
+            int *error);
 bool Accept(Handle socket, Handle *incoming, Address *connectee);
+bool Accept(Handle socket, Handle *incoming, Address *connectee, int *error);
 streamsize Send(Handle socket, const void *data, streamsize nbytes, int *error);
 streamsize Recv(Handle socket, void *buffer, streamsize nbytes, int *error);
 

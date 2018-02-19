@@ -9,26 +9,28 @@
 //	Copyright (c) 2014 Krzysiek Stasik. All rights reserved.
 //
 
-#include "base/network/socket.h"
 #include "base/core/assert.h"
+#include "base/network/socket.h"
 
-#include <unistd.h>
-#include <string.h>
-#include <netinet/in.h>
 #include <fcntl.h>
-#include <net/if.h>
 #include <ifaddrs.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <net/if.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
 namespace Base {
 namespace Socket {
 
-void Close(Handle socket) { close(socket); }
+void Close(Handle socket) {
+  int res = close(socket);
+  BASE_ASSERT(res != -1, "error: %d", errno);
+}
 
 const char *ErrorToString(int error) {
   switch(error) {
@@ -116,19 +118,28 @@ bool GetNetworkInterface(Base::AddressIPv4 *address, const char *if_name) {
 namespace Tcp {
 
 Handle Open() {
+  int error;
+  return Open(&error);
+}
+
+Handle Open(int *error) {
   Handle handle = socket(PF_INET, SOCK_STREAM, 0);
-  if(handle == InvalidHandle)
+  if(handle == InvalidHandle) {
+    *error = errno;
     return handle;
+  }
 
   // reuse address
   const int yes = 1;
   if(-1 == setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes))) {
     Close(handle);
+    *error = -1;
     return InvalidHandle;
   }
 
   // non-blocking socket.
   if(-1 == fcntl(handle, F_SETFL, O_NONBLOCK)) {
+    *error = -2;
     Close(handle);
     return InvalidHandle;
   }
@@ -136,7 +147,13 @@ Handle Open() {
 }
 
 bool Listen(Handle socket, u16 *port) {
+  int error;
+  return Listen(socket, port, &error);
+}
+
+bool Listen(Handle socket, u16 *port, int *error) {
   if(socket == InvalidHandle) {
+    *error = (int)-1;
     return false;
   }
 
@@ -149,6 +166,7 @@ bool Listen(Handle socket, u16 *port) {
   int res = bind(socket, (const struct sockaddr *)&address, sizeof(address));
 
   if(res == -1) {
+    *error = errno;
     BASE_LOG("bind on port %d failed with %d\n", *port, errno);
     return false;
   }
@@ -156,15 +174,19 @@ bool Listen(Handle socket, u16 *port) {
   socklen_t addr_len = sizeof(address);
   res = getsockname(socket, (struct sockaddr *)&address, &addr_len);
 
-  if(res == -1)
+  if(res == -1) {
+    *error = -2;
     return false;
+  }
 
   *port = ntohs(address.sin_port);
 
   res = listen(socket, 5);
 
-  if(res == -1)
+  if(res == -1) {
+    *error = -3;
     return false;
+  }
 
   return true;
 }
@@ -214,28 +236,52 @@ int IsConnected(Handle socket) {
   return kFailed;
 }
 
+bool Accept(Handle socket, Handle *incoming, Address *connectee, u32 timeout_ms,
+            int *error) {
+  fd_set readset;
+  FD_ZERO(&readset);
+  FD_SET(socket, &readset);
+  struct timeval timeout;
+  timeout.tv_sec = timeout_ms / 1000;
+  timeout.tv_usec = (timeout_ms % 1000) * 1000;
+  int result = select(socket + 1, &readset, NULL, NULL, &timeout);
+  if(result == 0) {
+    *error = errno;
+    return false;
+  }
+
+  return Accept(socket, incoming, connectee, error);
+}
 bool Accept(Handle socket, Handle *incoming, Address *connectee) {
+  int error;
+  return Accept(socket, incoming, connectee, &error);
+}
+
+bool Accept(Handle socket, Handle *incoming, Address *connectee, int *error) {
   socklen_t address_len = sizeof(struct sockaddr_in);
 
   int result =
       accept(socket, (struct sockaddr *)&connectee->m_data, &address_len);
-  if(-1 != result) {
-
-    if(-1 == fcntl(result, F_SETFL, O_NONBLOCK)) {
-      Close(result);
-      return false;
-    }
-
-    const int yes = 1;
-    if(-1 == setsockopt(result, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes))) {
-      Close(result);
-      return false;
-    }
-
-    *incoming = result;
+  if(result < 0) {
+    *error = errno;
+    return false;
   }
 
-  return result != -1;
+  if(-1 == fcntl(result, F_SETFL, O_NONBLOCK)) {
+    *error = errno;
+    Close(result);
+    return false;
+  }
+
+  const int yes = 1;
+  if(-1 == setsockopt(result, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes))) {
+    *error = errno;
+    Close(result);
+    return false;
+  }
+
+  *incoming = result;
+  return true;
 }
 
 streamsize Send(Handle socket, const void *data, streamsize nbytes,
