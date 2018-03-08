@@ -4,6 +4,7 @@
 #pragma once
 
 #include "base/core/types.h"
+#include "base/io/base_file.h"
 
 #include <unistd.h>
 
@@ -29,6 +30,8 @@ pid_t fork();
 int exec(const char *path, char *const argv[]);
 
 pid_t spawn(const char *path, char *const argv[]);
+
+pid_t spawn2(const char *path, char *const argv[], FileHandle &std_out);
 
 } // namespace Process
 } // namespace Base
